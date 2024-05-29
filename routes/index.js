@@ -3,7 +3,7 @@ const productRouter = require("./product");
 const productCategoryRouter = require("./productCategory");
 const warehouseRouter = require("./warehouse");
 const brandRouter = require("./brand");
-const warehouseExportRouter = require("./warehouseExport");
+const importRecord = require("./importRecord");
 const { notFound, errHandler } = require("../middlewares/errHandler");
 
 const initRoutes = (app) => {
@@ -12,7 +12,7 @@ const initRoutes = (app) => {
   app.use("/api/productcategory", productCategoryRouter);
   app.use("/api/warehouse", warehouseRouter);
   app.use("/api/brand", brandRouter);
-  app.use("/api/warehouseExport", warehouseExportRouter);
+  app.use("/api/importRecord", importRecord);
 
   app.use(notFound);
   app.use(errHandler);

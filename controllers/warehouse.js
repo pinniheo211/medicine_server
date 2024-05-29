@@ -1,7 +1,10 @@
 const Warehouse = require("../models/warehouse");
+const Product = require("../models/product");
 const asyncHandler = require("express-async-handler");
 const slugify = require("slugify");
 const User = require("../models/user");
+const ImportRecord = require("../models/importRecord");
+const ExportRecord = require("../models/exportRecord");
 const createWarehouse = asyncHandler(async (req, res) => {
   if (!req.body.name || !req.body.address) {
     throw new Error("Missing inputs");
@@ -21,6 +24,138 @@ const createWarehouse = asyncHandler(async (req, res) => {
       : "Cannot create new warehouse",
   });
 });
+const importProducts = asyncHandler(async (req, res) => {
+  const { warehouseId, products } = req.body;
+  const warehouse = await Warehouse.findById(warehouseId);
+  if (!warehouse) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Warehouse not found" });
+  }
+
+  const importRecord = new ImportRecord({
+    warehouse: warehouseId,
+    products,
+  });
+
+  for (const item of products) {
+    const product = await Product.findById(item.product);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: `Product not found: ${item.product}`,
+      });
+    }
+
+    const existingProduct = warehouse.products.find(
+      (p) => p.product.toString() === item.product
+    );
+    if (existingProduct) {
+      existingProduct.quantity += item.quantity;
+    } else {
+      warehouse.products.push({
+        product: item.product,
+        quantity: item.quantity,
+      });
+    }
+  }
+
+  await warehouse.save();
+  await importRecord.save();
+  res.status(200).json({ success: true, warehouse, importRecord });
+});
+const getAllImportRecords = asyncHandler(async (req, res) => {
+  const importRecords = await ImportRecord.find()
+    .populate({
+      path: "warehouse",
+      select: "name address",
+    })
+    .populate({
+      path: "products.product",
+      model: "Product",
+    });
+
+  if (!importRecords) {
+    res
+      .status(404)
+      .json({ success: false, message: "No import records found" });
+    return;
+  }
+
+  res.status(200).json({ success: true, importRecords });
+});
+
+const exportProducts = asyncHandler(async (req, res) => {
+  const { warehouseId, products } = req.body;
+  const warehouse = await Warehouse.findById(warehouseId);
+  if (!warehouse) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Warehouse not found" });
+  }
+
+  for (const item of products) {
+    const existingProduct = warehouse.products.find(
+      (p) => p.product.toString() === item.product
+    );
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        message: `Product not found in warehouse: ${item.product}`,
+      });
+    }
+
+    if (existingProduct.quantity < item.quantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient quantity for product: ${item.product}`,
+      });
+    }
+
+    existingProduct.quantity -= item.quantity;
+    if (existingProduct.quantity === 0) {
+      warehouse.products = warehouse.products.filter(
+        (p) => p.product.toString() !== item.product
+      );
+    }
+  }
+
+  await warehouse.save();
+
+  const newExportRecord = await ExportRecord.create({
+    warehouse: warehouseId,
+    products: products.map((item) => ({
+      product: item.product,
+      quantity: item.quantity,
+    })),
+  });
+
+  res
+    .status(200)
+    .json({ success: true, warehouse, exportRecord: newExportRecord });
+});
+
+const getAllExportRecords = asyncHandler(async (req, res) => {
+  const exportRecords = await ExportRecord.find()
+    .populate({
+      path: "warehouse",
+      select: "name address",
+    })
+    .populate({
+      path: "products.product",
+      model: "Product",
+    });
+
+  if (!exportRecords) {
+    res
+      .status(404)
+      .json({ success: false, message: "No export records found" });
+    return;
+  }
+
+  res.status(200).json({ success: true, exportRecords });
+});
+
 const getUserWarehouses = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
@@ -122,4 +257,8 @@ module.exports = {
   deleteWarehouse,
   getUserWarehouseDescription,
   updateWarehouse,
+  importProducts,
+  exportProducts,
+  getAllExportRecords,
+  getAllImportRecords,
 };

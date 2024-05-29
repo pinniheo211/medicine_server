@@ -17,7 +17,12 @@ var warehouseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    owner: { type: mongoose.Types.ObjectId, ref: "User" },
+    products: [
+      {
+        product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+        quantity: { type: Number, default: 0 },
+      },
+    ],
   },
   {
     timestamps: true,

@@ -132,15 +132,49 @@ const forgotPassword = asyncHandler(async (req, res) => {
   <html>
   <head>
     <meta charset="utf-8">
+    <style>
+      .container {
+        background: #fff;
+        width: 300px;
+        margin: 50px auto;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .container img {
+        width: 100px;
+        margin-bottom: 20px;
+      }
+      .container h1 {
+        margin: 0;
+        font-size: 24px;
+        color: #333;
+      }
+      .container p {
+        font-size: 16px;
+        color: #666;
+      }
+      .container a {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background: #007bff;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+      }
+    </style>
   </head>
   <body>
-    <div style="background: #ddd, width:300px, height: 300px">
-      <p>Xin vui lòng click vào link dưới đây để thay đổi mật khẩu của bạn.Link này sẽ hết hạn sau 15 phút kể từ bây giờ. </p> 
-      <a href=${process.env.CLIENT_URL}/reset-password/${resetToken}>Click here</a>
+    <div class="container">
+      <img src="https://t3.ftcdn.net/jpg/01/53/65/36/360_F_153653633_puFS0nYGtMON5Xp2MuRdCrps4QR92DOi.jpg" alt="Logo">
+      <h1>Reset Your Password</h1>
+      <p>Please click the link below to change your password. This link will expire 15 minutes from now.</p> 
+      <a href="${process.env.CLIENT_URL}/reset-password/${resetToken}">Click here</a>
     </div>
-    
   </body>
-</html>
+  </html>
   
   `;
 

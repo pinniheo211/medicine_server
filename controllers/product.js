@@ -38,7 +38,6 @@ const getProducts = asyncHandler(async (req, res) => {
     populate: [{ path: "brand" }, { path: "category" }],
   });
 
-  console.log(user);
   return res.status(200).json({
     success: user.products ? true : false,
     productDatas: user.products ? user.products : "Cannot get products",

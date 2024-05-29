@@ -4,7 +4,7 @@ const { verifyAccessToken, isAdmin } = require("../middlewares/verifyToken");
 const uploader = require("../config/cloundinary.config");
 router.post(
   "/",
-  [verifyAccessToken, isAdmin],
+  [verifyAccessToken],
   uploader.fields([{ name: "images", maxCount: 10 }]),
   ctrls.createProduct
 );
