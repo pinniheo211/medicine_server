@@ -64,29 +64,43 @@ const importProducts = asyncHandler(async (req, res) => {
   await importRecord.save();
   res.status(200).json({ success: true, warehouse, importRecord });
 });
-const getAllImportRecords = asyncHandler(async (req, res) => {
-  const importRecords = await ImportRecord.find()
-    .populate({
-      path: "warehouse",
-      select: "name address",
-    })
-    .populate({
-      path: "products.product",
-      model: "Product",
-    });
+const getAllImportRecordsForUser = asyncHandler(async (req, res) => {
+  console.log("ua alo");
+  // const userId = req.user._id;
 
-  if (!importRecords) {
-    res
-      .status(404)
-      .json({ success: false, message: "No import records found" });
-    return;
-  }
+  // if (!mongoose.Types.ObjectId.isValid(userId)) {
+  //   return res.status(400).json({ success: false, message: "Invalid user ID" });
+  // }
 
-  res.status(200).json({ success: true, importRecords });
+  // const user = await User.findById(userId).populate("warehouses");
+  // if (!user) {
+  //   return res.status(404).json({ success: false, message: "User not found" });
+  // }
+
+  // const warehouseIds = user.warehouses.map((warehouse) => warehouse._id);
+  // const importRecords = await ImportRecord.find({
+  //   warehouse: { $in: warehouseIds },
+  // })
+  //   .populate({
+  //     path: "warehouse",
+  //     select: "name address",
+  //   })
+  //   .populate({
+  //     path: "products.product",
+  //     model: "Product",
+  //   });
+
+  // if (!importRecords || importRecords.length === 0) {
+  //   return res
+  //     .status(404)
+  //     .json({ success: false, message: "No import records found" });
+  // }
+
+  // res.status(200).json({ success: true, importRecords });
 });
 
 const exportProducts = asyncHandler(async (req, res) => {
-  const { warehouseId, products } = req.body;
+  const { warehouseId, products, address } = req.body;
   const warehouse = await Warehouse.findById(warehouseId);
   if (!warehouse) {
     return res
@@ -124,6 +138,7 @@ const exportProducts = asyncHandler(async (req, res) => {
 
   const newExportRecord = await ExportRecord.create({
     warehouse: warehouseId,
+    address: address,
     products: products.map((item) => ({
       product: item.product,
       quantity: item.quantity,
@@ -260,5 +275,5 @@ module.exports = {
   importProducts,
   exportProducts,
   getAllExportRecords,
-  getAllImportRecords,
+  getAllImportRecordsForUser,
 };

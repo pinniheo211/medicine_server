@@ -18,6 +18,10 @@ const ExportRecordSchema = new mongoose.Schema(
         quantity: { type: Number, required: true },
       },
     ],
+    address: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,

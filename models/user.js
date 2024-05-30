@@ -1,7 +1,7 @@
-const mongoose = require("mongoose"); // Erase if already required
+const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-// Declare the Schema of the Mongo model
+
 var userSchema = new mongoose.Schema(
   {
     firstname: {
@@ -30,7 +30,6 @@ var userSchema = new mongoose.Schema(
       type: String,
       default: "user",
     },
-
     address: [{ type: mongoose.Types.ObjectId, ref: "Address" }],
     wishlist: [{ type: mongoose.Types.ObjectId, ref: "Product" }],
     isBlocked: {
@@ -61,6 +60,12 @@ var userSchema = new mongoose.Schema(
         ref: "Product",
       },
     ],
+    importRecords: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "ImportRecord",
+      },
+    ],
   },
   {
     timestamps: true,
@@ -74,6 +79,7 @@ userSchema.pre("save", async function (next) {
   const salt = bcrypt.genSaltSync(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
+
 userSchema.methods = {
   isCorrectPassword: async function (password) {
     return await bcrypt.compare(password, this.password);
@@ -89,5 +95,4 @@ userSchema.methods = {
   },
 };
 
-//Export the model
 module.exports = mongoose.model("User", userSchema);
