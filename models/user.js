@@ -66,6 +66,12 @@ var userSchema = new mongoose.Schema(
         ref: "ImportRecord",
       },
     ],
+    exportRecords: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "ExportRecord",
+      },
+    ],
   },
   {
     timestamps: true,
