@@ -17,7 +17,12 @@ router.put(
   ctrls.uploadImageProduct
 );
 
-router.put("/:pid", [verifyAccessToken], ctrls.updateProduct);
+router.put(
+  "/:pid",
+  [verifyAccessToken],
+  uploader.fields([{ name: "images", maxCount: 10 }]),
+  ctrls.updateProduct
+);
 router.delete("/:pid", [verifyAccessToken, isAdmin], ctrls.deleteProduct);
 router.get("/:pid", ctrls.getProduct);
 

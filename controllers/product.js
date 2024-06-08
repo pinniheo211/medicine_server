@@ -6,20 +6,28 @@ const User = require("../models/user");
 const createProduct = asyncHandler(async (req, res) => {
   const { title, price, description, brand, category } = req.body;
   const images = req?.files?.images?.map((el) => el.path);
-  if (!(title && price && description && brand && category))
+
+  if (!(title && price && description && brand && category)) {
     throw new Error("Missing inputs");
+  }
+
   req.body.slug = slugify(title);
   if (images) req.body.images = images;
+
   const newProduct = await Product.create(req.body);
   const userId = req.user._id;
+
+  // Add the new product ID to the beginning of the user's products array
   await User.findByIdAndUpdate(userId, {
-    $push: { products: newProduct._id },
+    $push: { products: { $each: [newProduct._id], $position: 0 } },
   });
+
   return res.status(200).json({
-    success: newProduct ? true : false,
-    createdProduct: newProduct ? newProduct : "Cannot create new product",
+    success: !!newProduct,
+    createdProduct: newProduct || "Cannot create new product",
   });
 });
+
 const getProduct = asyncHandler(async (req, res) => {
   const { pid } = req.params;
   const product = await Product.findById(pid)
@@ -46,12 +54,14 @@ const getProducts = asyncHandler(async (req, res) => {
 const updateProduct = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { pid } = req.params;
+  const images = req?.files?.images?.map((el) => el.path);
   if (req.body && req.body.title) req.body.slug = slugify(req.body.title);
   const user = await User.findById(userId);
   if (!user || !user.products.includes(pid)) {
     res.status(403);
     throw new Error("User does not have access to update this product");
   }
+  if (images) req.body.images = images;
   const updatedProduct = await Product.findByIdAndUpdate(pid, req.body, {
     new: true,
   });
