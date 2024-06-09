@@ -293,6 +293,87 @@ const updateWarehouse = asyncHandler(async (req, res) => {
   });
 });
 
+const getEndOfMonthInventory = asyncHandler(async (req, res) => {
+  try {
+    const { warehouseId, month, year } = req.query;
+
+    // Tạo ngày bắt đầu và kết thúc của tháng
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+    // Tìm kho hàng và điền thông tin sản phẩm
+    const warehouse = await Warehouse.findById(warehouseId).populate({
+      path: "products.product",
+      model: "Product",
+      select: "name price",
+    });
+
+    if (!warehouse) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Warehouse not found" });
+    }
+
+    // Tìm tất cả các phiếu nhập trong khoảng thời gian
+    const importRecords = await ImportRecord.find({
+      warehouse: warehouseId,
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+
+    // Tìm tất cả các phiếu xuất trong khoảng thời gian
+    const exportRecords = await ExportRecord.find({
+      warehouse: warehouseId,
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+
+    // Khởi tạo đối tượng tồn kho
+    const inventory = {};
+
+    // Bắt đầu với số lượng hiện tại trong kho
+    warehouse.products.forEach((item) => {
+      inventory[item.product._id] = {
+        product: item.product,
+        quantity: item.quantity,
+      };
+    });
+
+    // Cộng thêm số lượng từ phiếu nhập
+    importRecords.forEach((record) => {
+      record.products.forEach((item) => {
+        if (inventory[item.product]) {
+          inventory[item.product].quantity += item.quantity;
+        } else {
+          inventory[item.product] = {
+            product: item.product,
+            quantity: item.quantity,
+          };
+        }
+      });
+    });
+
+    // Trừ bớt số lượng từ phiếu xuất
+    exportRecords.forEach((record) => {
+      record.products.forEach((item) => {
+        if (inventory[item.product]) {
+          inventory[item.product].quantity -= item.quantity;
+        } else {
+          inventory[item.product] = {
+            product: item.product,
+            quantity: -item.quantity,
+          };
+        }
+      });
+    });
+
+    // Trả về kết quả
+    res
+      .status(200)
+      .json({ success: true, inventory: Object.values(inventory) });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = {
   createWarehouse,
   getUserWarehouses,
@@ -303,4 +384,5 @@ module.exports = {
   exportProducts,
   getAllExportRecords,
   getAllImportRecordsForUser,
+  getEndOfMonthInventory,
 };

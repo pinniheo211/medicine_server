@@ -2,6 +2,44 @@ const Product = require("../models/product");
 const asyncHandler = require("express-async-handler");
 const slugify = require("slugify");
 const User = require("../models/user");
+const xlsx = require("xlsx");
+
+const importProducts = asyncHandler(async (req, res) => {
+  const file = req.file;
+  if (!file) {
+    throw new Error("No file uploaded");
+  }
+
+  const workbook = xlsx.readFile(file.path);
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const rows = xlsx.utils.sheet_to_json(worksheet);
+
+  const userId = req.user._id;
+  const newProducts = [];
+
+  for (const row of rows) {
+    const { title, price, description, brand, category } = row;
+    if (!(title && price && description && brand && category)) {
+      throw new Error("Missing inputs");
+    }
+
+    const slug = slugify(title);
+    const productData = { title, price, description, brand, category, slug };
+
+    const newProduct = await Product.create(productData);
+    newProducts.push(newProduct._id);
+
+    await User.findByIdAndUpdate(userId, {
+      $push: { products: { $each: [newProduct._id], $position: 0 } },
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    importedProducts: newProducts,
+  });
+});
 
 const createProduct = asyncHandler(async (req, res) => {
   const { title, price, description, brand, category } = req.body;
@@ -98,4 +136,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   uploadImageProduct,
+  importProducts,
 };

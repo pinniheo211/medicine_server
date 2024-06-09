@@ -10,6 +10,11 @@ router.put("/update/:id", [verifyAccessToken], ctrls.updateWarehouse);
 router.post("/import", [verifyAccessToken], ctrls.importProducts);
 router.post("/export", [verifyAccessToken], ctrls.exportProducts);
 router.get(
+  "/inventory/end-of-month",
+  [verifyAccessToken],
+  ctrls.getEndOfMonthInventory
+);
+router.get(
   "/import-record/",
   [verifyAccessToken],
   ctrls.getAllImportRecordsForUser
