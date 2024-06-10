@@ -305,7 +305,6 @@ const getEndOfMonthInventory = asyncHandler(async (req, res) => {
     const warehouse = await Warehouse.findById(warehouseId).populate({
       path: "products.product",
       model: "Product",
-      select: "name price",
     });
 
     if (!warehouse) {
@@ -333,7 +332,10 @@ const getEndOfMonthInventory = asyncHandler(async (req, res) => {
     warehouse.products.forEach((item) => {
       inventory[item.product._id] = {
         product: item.product,
-        quantity: item.quantity,
+        initialQuantity: item.quantity,
+        importedQuantity: 0,
+        exportedQuantity: 0,
+        finalQuantity: item.quantity,
       };
     });
 
@@ -341,11 +343,15 @@ const getEndOfMonthInventory = asyncHandler(async (req, res) => {
     importRecords.forEach((record) => {
       record.products.forEach((item) => {
         if (inventory[item.product]) {
-          inventory[item.product].quantity += item.quantity;
+          inventory[item.product].importedQuantity += item.quantity;
+          inventory[item.product].finalQuantity += item.quantity;
         } else {
           inventory[item.product] = {
             product: item.product,
-            quantity: item.quantity,
+            initialQuantity: 0,
+            importedQuantity: item.quantity,
+            exportedQuantity: 0,
+            finalQuantity: item.quantity,
           };
         }
       });
@@ -355,20 +361,26 @@ const getEndOfMonthInventory = asyncHandler(async (req, res) => {
     exportRecords.forEach((record) => {
       record.products.forEach((item) => {
         if (inventory[item.product]) {
-          inventory[item.product].quantity -= item.quantity;
+          inventory[item.product].exportedQuantity += item.quantity;
+          inventory[item.product].finalQuantity -= item.quantity;
         } else {
           inventory[item.product] = {
             product: item.product,
-            quantity: -item.quantity,
+            initialQuantity: 0,
+            importedQuantity: 0,
+            exportedQuantity: item.quantity,
+            finalQuantity: -item.quantity,
           };
         }
       });
     });
 
-    // Trả về kết quả
-    res
-      .status(200)
-      .json({ success: true, inventory: Object.values(inventory) });
+    // Trả về kết quả với toàn bộ đối tượng sản phẩm và thông tin cần thiết
+    res.status(200).json({
+      success: true,
+      warehouseName: warehouse.name,
+      inventory: Object.values(inventory),
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
