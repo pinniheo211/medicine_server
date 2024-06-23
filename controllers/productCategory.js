@@ -10,11 +10,38 @@ const createCategory = asyncHandler(async (req, res) => {
   });
 });
 const getAllCategories = asyncHandler(async (req, res) => {
-  const response = await ProductCategory.find().select("title _id");
-  return res.json({
-    success: response ? true : false,
-    productCategories: response ? response : "Cannot get product category",
-  });
+  try {
+    const response = await ProductCategory.find().select("title _id createdAt");
+    return res.json({
+      success: response ? true : false,
+      productCategories: response ? response : "Cannot get product category",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+const getCategoryById = asyncHandler(async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    const category = await ProductCategory.findById(categoryId).select(
+      "title _id createdAt"
+    );
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      category,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 const updateCategory = asyncHandler(async (req, res) => {
@@ -42,4 +69,5 @@ module.exports = {
   getAllCategories,
   updateCategory,
   deleteCategory,
+  getCategoryById,
 };

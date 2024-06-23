@@ -211,11 +211,17 @@ const resetPassword = asyncHandler(async (req, res) => {
   });
 });
 const getUsers = asyncHandler(async (req, res) => {
-  const response = await User.find().select("-refreshToken -password -role");
-  return res.status(200).json({
-    success: response ? true : false,
-    users: response,
-  });
+  try {
+    const response = await User.find({ role: { $ne: "admin" } }).select(
+      "-refreshToken -password -role"
+    );
+    return res.status(200).json({
+      success: true,
+      users: response,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 const deleteUser = asyncHandler(async (req, res) => {
   const { _id } = req.query;
