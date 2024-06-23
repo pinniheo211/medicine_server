@@ -17,6 +17,29 @@ const getAllBrands = asyncHandler(async (req, res) => {
   });
 });
 
+const getBrandById = asyncHandler(async (req, res) => {
+  try {
+    const brandId = req.params.id;
+    const brand = await Brand.findById(brandId).select(
+      "title _id description createdAt"
+    );
+
+    if (!brand) {
+      return res.status(404).json({
+        success: false,
+        message: "Brand not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      brand,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 const updateBrand = asyncHandler(async (req, res) => {
   const { bid } = req.params;
   const response = await Brand.findByIdAndUpdate(bid, req.body, {
@@ -42,4 +65,5 @@ module.exports = {
   getAllBrands,
   updateBrand,
   deleteBrand,
+  getBrandById,
 };
