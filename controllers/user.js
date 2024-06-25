@@ -7,6 +7,7 @@ const {
 const jwt = require("jsonwebtoken");
 const sendMail = require("../ultils/sendMail");
 const crypto = require("crypto");
+const { default: mongoose } = require("mongoose");
 
 const register = asyncHandler(async (req, res) => {
   const { email, password, firstname, lastname } = req.body;
@@ -39,6 +40,12 @@ const login = asyncHandler(async (req, res) => {
   // plain object
   const response = await User.findOne({ email });
   if (response && (await response.isCorrectPassword(password))) {
+    if (response.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        mes: "User is blocked",
+      });
+    }
     // Tách password và role ra khỏi response
     const { password, role, refreshToken, ...userData } = response.toObject();
     // Tạo access token
@@ -71,6 +78,30 @@ const getCurrent = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: user ? true : false,
     rs: user ? user : "User not found",
+  });
+});
+const getUserById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid user ID",
+    });
+  }
+
+  const user = await User.findById(id).select("-refreshToken -password -role");
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    user,
   });
 });
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -247,6 +278,53 @@ const updateUser = asyncHandler(async (req, res) => {
     updatedUser: response ? response : "Some thing went wrong",
   });
 });
+
+const blockUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "Invalid user ID" });
+  }
+
+  const user = await User.findById(id);
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  user.isBlocked = true;
+  await user.save();
+
+  return res.status(200).json({
+    success: true,
+    message: `User with ID ${id} has been blocked`,
+    user,
+  });
+});
+
+const unblockUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "Invalid user ID" });
+  }
+
+  const user = await User.findById(id);
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  user.isBlocked = false;
+  await user.save();
+
+  return res.status(200).json({
+    success: true,
+    message: `User with ID ${id} has been unblocked`,
+    user,
+  });
+});
+
 const updateUserByAdmin = asyncHandler(async (req, res) => {
   //
   const { uid } = req.params;
@@ -271,4 +349,7 @@ module.exports = {
   deleteUser,
   updateUser,
   updateUserByAdmin,
+  getUserById,
+  blockUser,
+  unblockUser,
 };

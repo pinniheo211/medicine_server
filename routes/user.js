@@ -10,8 +10,11 @@ router.get("/logout", ctrls.logout);
 router.get("/forgotpassword", ctrls.forgotPassword);
 router.put("/resetpassword", ctrls.resetPassword);
 router.get("/", [verifyAccessToken, isAdmin], ctrls.getUsers);
+router.get("/:id", [verifyAccessToken, isAdmin], ctrls.getUserById);
 router.delete("/", [verifyAccessToken, isAdmin], ctrls.deleteUser);
 router.put("/current", [verifyAccessToken], ctrls.updateUser);
 router.put("/:uid", [verifyAccessToken, isAdmin], ctrls.updateUserByAdmin);
+router.put("/block/:id", [verifyAccessToken, isAdmin], ctrls.blockUser);
+router.put("/unblock/:id", [verifyAccessToken, isAdmin], ctrls.unblockUser);
 
 module.exports = router;

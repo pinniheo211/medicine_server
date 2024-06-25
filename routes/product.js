@@ -52,7 +52,7 @@ router.put(
   uploader.fields([{ name: "images", maxCount: 10 }]),
   ctrls.updateProduct
 );
-router.delete("/:pid", [verifyAccessToken, isAdmin], ctrls.deleteProduct);
+router.delete("/:pid", [verifyAccessToken], ctrls.deleteProduct);
 router.get("/:pid", ctrls.getProduct);
 
 module.exports = router;
