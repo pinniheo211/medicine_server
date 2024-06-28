@@ -20,4 +20,10 @@ router.get(
   ctrls.getAllImportRecordsForUser
 );
 router.get("/export-records", [verifyAccessToken], ctrls.getAllExportRecords);
+router.delete(
+  "/admin/user/:userId/warehouse/:warehouseId",
+  [verifyAccessToken],
+  ctrls.deleteUserWarehouseByAdmin
+);
+
 module.exports = router;

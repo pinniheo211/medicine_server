@@ -53,6 +53,11 @@ router.put(
   ctrls.updateProduct
 );
 router.delete("/:pid", [verifyAccessToken], ctrls.deleteProduct);
+router.delete(
+  "/admin/user/:userId/product/:productId",
+  [verifyAccessToken],
+  ctrls.deleteUserProductByAdmin
+);
 router.get("/:pid", ctrls.getProduct);
 
 module.exports = router;

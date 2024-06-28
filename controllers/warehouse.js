@@ -6,6 +6,7 @@ const User = require("../models/user");
 const ImportRecord = require("../models/importRecord");
 const ExportRecord = require("../models/exportRecord");
 const exportRecord = require("../models/exportRecord");
+const { default: mongoose } = require("mongoose");
 const createWarehouse = asyncHandler(async (req, res) => {
   if (!req.body.name || !req.body.address) {
     throw new Error("Missing inputs");
@@ -386,6 +387,42 @@ const getEndOfMonthInventory = asyncHandler(async (req, res) => {
   }
 });
 
+const deleteUserWarehouseByAdmin = asyncHandler(async (req, res) => {
+  const { userId, warehouseId } = req.params;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(userId) ||
+    !mongoose.Types.ObjectId.isValid(warehouseId)
+  ) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid user ID or warehouse ID" });
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  const warehouseIndex = user.warehouses.indexOf(warehouseId);
+  if (warehouseIndex > -1) {
+    user.warehouses.splice(warehouseIndex, 1);
+    await user.save();
+  } else {
+    return res
+      .status(404)
+      .json({ success: false, message: "Warehouse not found in user's list" });
+  }
+
+  await Warehouse.findByIdAndDelete(warehouseId);
+
+  return res.status(200).json({
+    success: true,
+    message: `Warehouse with ID ${warehouseId} has been deleted for user with ID ${userId}`,
+  });
+});
+
 module.exports = {
   createWarehouse,
   getUserWarehouses,
@@ -397,4 +434,5 @@ module.exports = {
   getAllExportRecords,
   getAllImportRecordsForUser,
   getEndOfMonthInventory,
+  deleteUserWarehouseByAdmin,
 };

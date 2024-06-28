@@ -16,5 +16,15 @@ router.put("/current", [verifyAccessToken], ctrls.updateUser);
 router.put("/:uid", [verifyAccessToken, isAdmin], ctrls.updateUserByAdmin);
 router.put("/block/:id", [verifyAccessToken, isAdmin], ctrls.blockUser);
 router.put("/unblock/:id", [verifyAccessToken, isAdmin], ctrls.unblockUser);
+router.get(
+  "/products/:userId",
+  [verifyAccessToken, isAdmin],
+  ctrls.getUserProducts
+);
+router.get(
+  "/warehouses/:userId",
+  [verifyAccessToken, isAdmin],
+  ctrls.getUserWarehousesByAdmin
+);
 
 module.exports = router;

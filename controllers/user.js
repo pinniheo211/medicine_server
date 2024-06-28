@@ -1,4 +1,6 @@
 const User = require("../models/user");
+const Brand = require("../models/brand");
+const Category = require("../models/productCategory");
 const asyncHandler = require("express-async-handler");
 const {
   generateAccessToken,
@@ -337,6 +339,48 @@ const updateUserByAdmin = asyncHandler(async (req, res) => {
     updatedUser: response ? response : "Some thing went wrong",
   });
 });
+
+const getUserProducts = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ success: false, message: "Invalid user ID" });
+  }
+
+  const user = await User.findById(userId).populate({
+    path: "products",
+    populate: [
+      { path: "brand", model: "Brand" },
+      { path: "category", model: "ProductCategory" },
+    ],
+  });
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  res.status(200).json({ success: true, products: user.products });
+});
+
+const getUserWarehousesByAdmin = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ success: false, message: "Invalid user ID" });
+  }
+
+  const user = await User.findById(userId).populate("warehouses");
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  return res.status(200).json({
+    success: true,
+    warehouses: user.warehouses,
+  });
+});
+
 module.exports = {
   register,
   login,
@@ -352,4 +396,6 @@ module.exports = {
   getUserById,
   blockUser,
   unblockUser,
+  getUserProducts,
+  getUserWarehousesByAdmin,
 };

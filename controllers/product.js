@@ -3,6 +3,7 @@ const asyncHandler = require("express-async-handler");
 const slugify = require("slugify");
 const User = require("../models/user");
 const xlsx = require("xlsx");
+const { default: mongoose } = require("mongoose");
 
 const importProducts = asyncHandler(async (req, res) => {
   const file = req.file;
@@ -110,10 +111,67 @@ const updateProduct = asyncHandler(async (req, res) => {
 });
 const deleteProduct = asyncHandler(async (req, res) => {
   const { pid } = req.params;
-  const deletedProduct = await Product.findByIdAndDelete(pid);
+
+  if (!mongoose.Types.ObjectId.isValid(pid)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid product ID" });
+  }
+
+  const product = await Product.findById(pid);
+
+  if (!product) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Product not found" });
+  }
+
+  // Xóa tham chiếu sản phẩm từ danh sách `products` của người dùng
+  await User.updateMany({ products: pid }, { $pull: { products: pid } });
+
+  await product.remove();
+
   return res.status(200).json({
-    success: deletedProduct ? true : false,
-    deletedProduct: deletedProduct ? deletedProduct : "Cannot delete product",
+    success: true,
+    message: `Product with ID ${pid} has been deleted`,
+  });
+});
+
+const deleteUserProductByAdmin = asyncHandler(async (req, res) => {
+  const { userId, productId } = req.params;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(userId) ||
+    !mongoose.Types.ObjectId.isValid(productId)
+  ) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid user ID or product ID" });
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  const productIndex = user.products.indexOf(productId);
+  if (productIndex > -1) {
+    user.products.splice(productIndex, 1);
+    await user.save();
+  }
+
+  const product = await Product.findByIdAndDelete(productId);
+
+  if (!product) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Product not found" });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: `Product with ID ${productId} has been deleted`,
   });
 });
 
@@ -137,4 +195,5 @@ module.exports = {
   deleteProduct,
   uploadImageProduct,
   importProducts,
+  deleteUserProductByAdmin,
 };
